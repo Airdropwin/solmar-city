@@ -1,6 +1,6 @@
 // Solmar City itself: a sunny coastal grid of roads, blocks of buildings,
-// a beach and the sea. Everything is built from boxes and a few procedural
-// canvas textures — no external art, no external files.
+// a plaza, a beach and the sea. Everything is built from boxes plus a few
+// procedural canvas textures — no external art, no external files.
 import * as THREE from 'three';
 import { CITY, PALETTE } from './config.js';
 import { pick, range } from './rng.js';

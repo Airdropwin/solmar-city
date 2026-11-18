@@ -1,5 +1,6 @@
-// Deterministic random numbers (mulberry32) so the city, the traffic and the
-// screenshot scenes look the same for every run with the same seed.
+// Seeded randomness (mulberry32) plus the small math helpers the whole game
+// shares — so the city layout, the traffic and the screenshot scenes are the
+// same on every run with the same seed.
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {

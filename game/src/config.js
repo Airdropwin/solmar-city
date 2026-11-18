@@ -1,6 +1,6 @@
-// SOLMAR CITY — every tuning number lives here, so the rest of the game
-// reads like rules instead of arithmetic. Change a value here and the whole
-// city, the player, the cars and the cops all agree on it.
+// SOLMAR CITY — all the tuning numbers in one place. Every other module
+// reads its speeds, sizes and limits from here, so balancing the game means
+// editing this file, not hunting through the code.
 export const STEP = 1 / 60; // fixed world step, seconds
 
 export const CITY = {
