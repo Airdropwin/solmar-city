@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLMAR CITY — Open-World Crime</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #87c5eb; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #game { position: fixed; inset: 0; }
+  #game canvas { display: block; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 10; }
+  /* ---- Title screen ---- */
+  #title { background: linear-gradient(180deg, rgba(10,30,50,0.25) 0%, rgba(10,30,50,0.75) 100%); color: #fff; text-align: center; }
+  #title h1 { font-size: 72px; margin: 0; letter-spacing: 6px; color: #ffd34d; text-shadow: 0 4px 0 #b5533c, 0 8px 24px rgba(0,0,0,0.6); font-style: italic; }
+  #title h2 { font-size: 20px; margin: 8px 0 18px; font-weight: 400; color: #eaf6ff; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+  #title .story { max-width: 560px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 14px 20px; font-size: 15px; line-height: 1.5; margin-bottom: 18px; }
+  #title .controls { font-size: 13px; color: #cfe8ff; margin-bottom: 20px; line-height: 1.7; }
+  .btn { font-size: 18px; padding: 12px 34px; margin: 4px; border: none; border-radius: 8px; cursor: pointer; background: #ffd34d; color: #222; font-weight: 700; box-shadow: 0 4px 0 #b89b2e; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.secondary { background: #e8eef2; box-shadow: 0 4px 0 #9aa7b0; }
+  .btn.small { font-size: 14px; padding: 9px 20px; }
+  /* ---- HUD ---- */
+  #hud { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 5; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
+  #top-right { position: absolute; top: 12px; right: 12px; text-align: right; }
+  #money { font-size: 30px; font-weight: 800; color: #7dff8a; }
+  #stars { font-size: 26px; letter-spacing: 3px; transition: transform 0.15s; }
+  #clock { font-size: 16px; color: #eaf6ff; }
+  #top-left { position: absolute; top: 12px; left: 12px; width: 260px; }
+  #health-bar { width: 220px; height: 14px; background: rgba(0,0,0,0.55); border: 1px solid #fff8; border-radius: 7px; overflow: hidden; }
+  #health-fill { height: 100%; width: 100%; background: #4caf50; }
+  #health-num { font-size: 13px; }
+  #ammo { font-size: 14px; margin-top: 4px; }
+  #objective { margin-top: 10px; font-size: 15px; background: rgba(0,0,0,0.55); border-left: 4px solid #ffd34d; padding: 8px 10px; border-radius: 4px; line-height: 1.4; }
+  #minimap { position: absolute; right: 12px; bottom: 12px; border: 2px solid rgba(255,255,255,0.7); border-radius: 6px; background: #1d2b1f; }
+  #speed { position: absolute; right: 204px; bottom: 16px; font-size: 26px; font-weight: 800; }
+  #controls-hint { position: absolute; left: 12px; bottom: 12px; font-size: 12px; line-height: 1.6; color: #dfeeff; background: rgba(0,0,0,0.45); padding: 8px 10px; border-radius: 6px; }
+  #hint-enter { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); font-size: 18px; background: rgba(0,0,0,0.65); padding: 8px 16px; border-radius: 8px; display: none; }
+  #toast { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); font-size: 17px; background: rgba(0,0,0,0.7); padding: 10px 18px; border-radius: 8px; opacity: 0; transition: opacity 0.3s; text-align: center; max-width: 70%; }
+  #dialog { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); width: 520px; max-width: 86%; background: rgba(10,20,35,0.85); border: 1px solid #ffd34d66; border-radius: 10px; padding: 12px 18px; opacity: 0; transition: opacity 0.3s; }
+  #dialog-title { color: #ffd34d; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+  #dialog-text { font-size: 14px; line-height: 1.5; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; display: none; }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 3px #000; }
+  #crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  #crosshair::after { left: 0; top: 8px; width: 18px; height: 2px; }
+  #damage-flash { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(255,0,0,0.55) 100%); opacity: 0; transition: opacity 0.15s; z-index: 6; }
+  /* ---- Pause ---- */
+  #pause { display: none; background: rgba(0,0,0,0.6); color: #fff; z-index: 10; }
+  #pause h1 { font-size: 40px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div id="game" aria-label="Solmar City: a 3D open-world crime game"></div>
+
+<div id="hud">
+  <div id="top-left">
+    <div id="health-bar"><div id="health-fill"></div></div>
+    <div id="health-num">100</div>
+    <div id="ammo"></div>
+    <div id="objective">◆ Steal any car (walk up and press E)</div>
+  </div>
+  <div id="top-right">
+    <div id="money">$50</div>
+    <div id="stars">☆☆☆☆☆</div>
+    <div id="clock">09:00</div>
+  </div>
+  <div id="toast"></div>
+  <div id="dialog"><div id="dialog-title"></div><div id="dialog-text"></div></div>
+  <div id="crosshair"></div>
+  <div id="hint-enter">Press <b>E</b> to get in the car</div>
+  <div id="speed"></div>
+  <div id="controls-hint">WASD move / drive · Mouse camera · Shift run · Space jump / handbrake<br>E enter car · F punch · Click shoot · R reload · Esc pause · M mute</div>
+  <canvas id="minimap" width="180" height="180"></canvas>
+</div>
+<div id="damage-flash"></div>
+
+<div id="title" class="overlay">
+  <h1>SOLMAR CITY</h1>
+  <h2>Sun, sand, and one last big score.</h2>
+  <div class="story">You are <b>Danny Reyes</b>, new in a bright coastal city with an empty wallet
+  and a cousin who knows people. Steal a car, run jobs for Rosa, outrun the Solmar
+  police, find the 10 hidden packages, and crack the Sunset Bank — then get home
+  in one piece. An original open-world crime story. No real city, no real gang,
+  just you and the sun.</div>
+  <div class="controls">WASD move &amp; drive · Mouse to look (click to lock) · Shift run · Space jump / handbrake<br>
+  E enter / exit car · Left click shoot · F punch · R reload · Esc pause · M mute</div>
+  <div>
+    <button id="start-btn" class="btn">▶ Start New Game</button>
+    <button id="continue-btn" class="btn secondary" style="display:none">Continue</button>
+  </div>
+</div>
+
+<div id="pause" class="overlay">
+  <h1>Paused</h1>
+  <button id="resume-btn" class="btn">Resume</button>
+  <button id="restart-btn" class="btn secondary">Restart (new game)</button>
+  <button id="mute-btn" class="btn secondary small">Mute (M)</button>
+  <button id="quit-btn" class="btn secondary small">Save &amp; quit to title</button>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
